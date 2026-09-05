@@ -524,3 +524,26 @@ class TestRetry:
         # Same empty payload, so it fails again; the link is what matters here.
         assert retry["status"] == "failed"
         assert retry["retry_of_id"] == original["id"]
+
+
+class TestOverview:
+    def test_summarises_workflows_and_recent_runs(
+        self, client: TestClient, registered_user: dict
+    ) -> None:
+        workflow_id = build(client, [node("manual_trigger", "Start")], [], name="Counted")
+        client.patch(f"/api/workflows/{workflow_id}", json={"status": "active"})
+        run(client, workflow_id)
+
+        body = client.get("/api/overview").json()
+
+        assert body["workflow_count"] == 1
+        assert body["active_workflow_count"] == 1
+        assert body["execution_counts"]["succeeded"] == 1
+        assert body["execution_counts"]["failed"] == 0
+        assert body["recent_executions"][0]["workflow_name"] == "Counted"
+
+    def test_is_empty_for_a_new_account(self, client: TestClient, registered_user: dict) -> None:
+        body = client.get("/api/overview").json()
+
+        assert body["workflow_count"] == 0
+        assert body["recent_executions"] == []

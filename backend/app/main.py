@@ -8,6 +8,7 @@ from app.api.routes import (
     executions,
     health,
     nodes,
+    overview,
     templates,
     webhooks,
     workflows,
@@ -46,6 +47,7 @@ def create_app() -> FastAPI:
     app.include_router(executions.router, prefix=API_PREFIX)
     app.include_router(webhooks.router, prefix=API_PREFIX)
     app.include_router(templates.router, prefix=API_PREFIX)
+    app.include_router(overview.router, prefix=API_PREFIX)
     return app
 
 

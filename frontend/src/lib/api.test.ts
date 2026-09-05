@@ -2,6 +2,17 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { ApiError, apiFetch } from "@/lib/api";
 
+/** Await a request that is expected to reject, and return its ApiError. */
+async function expectApiError(request: Promise<unknown>): Promise<ApiError> {
+  try {
+    await request;
+  } catch (error) {
+    expect(error).toBeInstanceOf(ApiError);
+    return error as ApiError;
+  }
+  throw new Error("Expected the request to fail.");
+}
+
 function mockResponse(status: number, body: unknown, ok = status < 400) {
   return {
     ok,
@@ -23,7 +34,7 @@ describe("apiFetch", () => {
   });
 
   it("sends credentials so the session cookie is included", async () => {
-    const fetchMock = vi.fn(async () => mockResponse(200, {}));
+    const fetchMock = vi.fn(async (_url: string, _init?: RequestInit) => mockResponse(200, {}));
     vi.stubGlobal("fetch", fetchMock);
 
     await apiFetch("/api/auth/me");
@@ -32,7 +43,7 @@ describe("apiFetch", () => {
   });
 
   it("omits empty query parameters from the URL", async () => {
-    const fetchMock = vi.fn(async () => mockResponse(200, {}));
+    const fetchMock = vi.fn(async (_url: string, _init?: RequestInit) => mockResponse(200, {}));
     vi.stubGlobal("fetch", fetchMock);
 
     await apiFetch("/api/workflows", { query: { search: "", status: "active", limit: 20 } });
@@ -60,9 +71,8 @@ describe("apiFetch", () => {
       ),
     );
 
-    const error = await apiFetch("/api/workflows/missing").catch((caught) => caught);
+    const error = await expectApiError(apiFetch("/api/workflows/missing"));
 
-    expect(error).toBeInstanceOf(ApiError);
     expect(error.status).toBe(404);
     expect(error.code).toBe("not_found");
     expect(error.message).toBe("Workflow not found.");
@@ -82,7 +92,7 @@ describe("apiFetch", () => {
       ),
     );
 
-    const error = await apiFetch("/api/workflows", { method: "POST" }).catch((caught) => caught);
+    const error = await expectApiError(apiFetch("/api/workflows", { method: "POST" }));
 
     expect(error.code).toBe("validation_error");
     expect(error.fieldErrors.name).toEqual(["String should have at least 1 character"]);
@@ -97,7 +107,7 @@ describe("apiFetch", () => {
       ),
     );
 
-    const error = await apiFetch("/api/auth/me").catch((caught) => caught);
+    const error = await expectApiError(apiFetch("/api/auth/me"));
 
     expect(error.isUnauthorized).toBe(true);
   });

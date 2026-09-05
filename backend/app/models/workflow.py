@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Any
 from sqlalchemy import Float, ForeignKey, Index, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.db.base import Base, TimestampMixin, uuid_pk
+from app.db.base import Base, EnumString, TimestampMixin, uuid_pk
 from app.models.enums import WorkflowStatus
 
 if TYPE_CHECKING:
@@ -27,7 +27,7 @@ class Workflow(TimestampMixin, Base):
     name: Mapped[str] = mapped_column(String(120), nullable=False)
     description: Mapped[str] = mapped_column(Text, default="", nullable=False)
     status: Mapped[WorkflowStatus] = mapped_column(
-        String(16), default=WorkflowStatus.DRAFT, nullable=False
+        EnumString(WorkflowStatus), default=WorkflowStatus.DRAFT, nullable=False
     )
     #: Opaque secret used to authenticate inbound webhook calls for this workflow.
     webhook_token: Mapped[str] = mapped_column(String(64), unique=True, index=True, nullable=False)

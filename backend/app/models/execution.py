@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Any
 from sqlalchemy import DateTime, ForeignKey, Index, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.db.base import Base, TimestampMixin, uuid_pk
+from app.db.base import Base, EnumString, TimestampMixin, uuid_pk
 from app.models.enums import ExecutionStatus, ExecutionTrigger, NodeRunStatus
 
 if TYPE_CHECKING:
@@ -29,10 +29,10 @@ class Execution(TimestampMixin, Base):
         ForeignKey("workflows.id", ondelete="CASCADE"), nullable=False, index=True
     )
     status: Mapped[ExecutionStatus] = mapped_column(
-        String(16), default=ExecutionStatus.PENDING, nullable=False, index=True
+        EnumString(ExecutionStatus), default=ExecutionStatus.PENDING, nullable=False, index=True
     )
     trigger: Mapped[ExecutionTrigger] = mapped_column(
-        String(16), default=ExecutionTrigger.MANUAL, nullable=False
+        EnumString(ExecutionTrigger), default=ExecutionTrigger.MANUAL, nullable=False
     )
     #: Payload handed to the trigger node, e.g. a webhook request body.
     trigger_payload: Mapped[dict[str, Any]] = mapped_column(default=dict, nullable=False)
@@ -81,7 +81,7 @@ class ExecutionNode(TimestampMixin, Base):
     node_type: Mapped[str] = mapped_column(String(64), nullable=False)
     node_label: Mapped[str] = mapped_column(String(120), nullable=False)
     status: Mapped[NodeRunStatus] = mapped_column(
-        String(16), default=NodeRunStatus.PENDING, nullable=False
+        EnumString(NodeRunStatus), default=NodeRunStatus.PENDING, nullable=False
     )
     #: Position of the node in the resolved execution order, starting at 0.
     sequence: Mapped[int] = mapped_column(Integer, default=0, nullable=False)

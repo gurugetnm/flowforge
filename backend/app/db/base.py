@@ -2,16 +2,41 @@
 
 import uuid
 from datetime import datetime
+from enum import StrEnum
 from typing import Any
 
-from sqlalchemy import DateTime, Uuid, func
+from sqlalchemy import DateTime, Dialect, String, Uuid, func
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
-from sqlalchemy.types import JSON
+from sqlalchemy.types import JSON, TypeDecorator
 
 # JSONB on PostgreSQL, plain JSON elsewhere so the test suite can also run
 # against SQLite without changing the models.
 JSONColumn = JSON().with_variant(JSONB(), "postgresql")
+
+
+class EnumString[E: StrEnum](TypeDecorator[E]):
+    """Stores a `StrEnum` as a short string, and reads it back as the enum.
+
+    The stored representation is a plain ``VARCHAR``, which keeps migrations
+    simple and the data readable in `psql`, while the mapped attribute is
+    always a real enum member rather than a bare string.
+    """
+
+    impl = String
+    cache_ok = True
+
+    def __init__(self, enum_class: type[E], length: int = 16) -> None:
+        super().__init__(length=length)
+        self.enum_class = enum_class
+
+    def process_bind_param(self, value: E | str | None, dialect: Dialect) -> str | None:
+        if value is None:
+            return None
+        return self.enum_class(value).value
+
+    def process_result_value(self, value: str | None, dialect: Dialect) -> E | None:
+        return None if value is None else self.enum_class(value)
 
 
 class Base(DeclarativeBase):

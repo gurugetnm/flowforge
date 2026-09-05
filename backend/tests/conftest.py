@@ -7,10 +7,12 @@ Alembic migrations once per session.
 """
 
 import os
+import uuid
 from collections.abc import Generator
 
 import pytest
 from alembic.config import Config
+from fastapi.testclient import TestClient
 from sqlalchemy import Engine, create_engine, text
 from sqlalchemy.orm import Session, sessionmaker
 
@@ -79,3 +81,28 @@ def clean_database(engine: Engine) -> Generator[None, None, None]:
                 "executions, execution_nodes RESTART IDENTITY CASCADE"
             )
         )
+
+
+@pytest.fixture
+def client(session: Session) -> Generator[TestClient, None, None]:
+    """API client bound to the test transaction, so requests roll back too."""
+    from app.api.deps import get_session as session_dependency
+    from app.main import app
+
+    app.dependency_overrides[session_dependency] = lambda: session
+    with TestClient(app) as test_client:
+        yield test_client
+    app.dependency_overrides.clear()
+
+
+@pytest.fixture
+def registered_user(client: TestClient) -> dict[str, str]:
+    """Register an account and leave the client authenticated as it."""
+    credentials = {
+        "email": f"dev-{uuid.uuid4().hex[:8]}@example.com",
+        "name": "Test Developer",
+        "password": "correct-horse-battery",
+    }
+    response = client.post("/api/auth/register", json=credentials)
+    assert response.status_code == 201, response.text
+    return {**credentials, "id": response.json()["id"]}

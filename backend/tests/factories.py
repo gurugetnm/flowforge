@@ -9,7 +9,7 @@ from app.models import User, Workflow, WorkflowEdge, WorkflowNode
 
 
 def unique_email(prefix: str = "dev") -> str:
-    return f"{prefix}-{uuid.uuid4().hex[:8]}@flowforge.test"
+    return f"{prefix}-{uuid.uuid4().hex[:8]}@example.com"
 
 
 def make_user(session: Session, **overrides: Any) -> User:

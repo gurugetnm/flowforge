@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 
+import { CommandPalette } from "@/components/layout/command-palette";
 import { ErrorBoundary } from "@/components/layout/error-boundary";
 import { Sidebar } from "@/components/layout/sidebar";
 import { TopBar } from "@/components/layout/top-bar";
@@ -34,6 +35,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           <ErrorBoundary>{children}</ErrorBoundary>
         </main>
       </div>
+      <CommandPalette />
     </div>
   );
 }

@@ -175,7 +175,9 @@ function ConfigField({
           <Input
             type="number"
             step="any"
-            value={value === undefined || value === null ? "" : String(value)}
+            // Falls back to the declared default so a field added after this
+            // node was created still shows the value the server will apply.
+            value={numberValue(value, field.default)}
             placeholder={field.placeholder}
             onChange={(event) => {
               const parsed = Number(event.target.value);
@@ -250,6 +252,11 @@ function ConfigField({
         </Field>
       );
   }
+}
+
+function numberValue(value: unknown, fallback: unknown): string {
+  const resolved = value ?? fallback;
+  return resolved === undefined || resolved === null ? "" : String(resolved);
 }
 
 /** A field with `depends_on` only applies to some values of another field. */

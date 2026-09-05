@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { Plus, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -13,11 +14,15 @@ interface Props {
   label: string;
 }
 
+type Row = [key: string, value: string];
+
 /**
  * Edits a string map as rows of inputs.
  *
- * Rows are held as an array while editing so a half-typed key does not collide
- * with another row or vanish as it is retyped.
+ * Rows are held locally as an ordered list rather than derived from the map on
+ * every render: a new row starts with a blank name, and a map cannot hold one,
+ * so deriving would delete the row the moment it appeared. Only rows with a
+ * name are reported upwards.
  */
 export function KeyValueEditor({
   value,
@@ -26,10 +31,15 @@ export function KeyValueEditor({
   valuePlaceholder = "Value",
   label,
 }: Props) {
-  const rows = Object.entries(value ?? {});
+  const [rows, setRows] = useState<Row[]>(() => Object.entries(value ?? {}));
 
-  function emit(next: [string, string][]) {
+  function apply(next: Row[]) {
+    setRows(next);
     onChange(Object.fromEntries(next.filter(([key]) => key.trim() !== "")));
+  }
+
+  function updateRow(index: number, row: Row) {
+    apply(rows.map((existing, position) => (position === index ? row : existing)));
   }
 
   return (
@@ -42,29 +52,21 @@ export function KeyValueEditor({
                 value={key}
                 aria-label={`${label} name ${index + 1}`}
                 placeholder={keyPlaceholder}
-                className="h-8 flex-1 font-mono text-xs"
-                onChange={(event) => {
-                  const next = [...rows] as [string, string][];
-                  next[index] = [event.target.value, entryValue];
-                  emit(next);
-                }}
+                className="h-8 min-w-0 flex-1 font-mono text-xs"
+                onChange={(event) => updateRow(index, [event.target.value, entryValue])}
               />
               <Input
                 value={entryValue}
                 aria-label={`${label} value ${index + 1}`}
                 placeholder={valuePlaceholder}
-                className="h-8 flex-1 font-mono text-xs"
-                onChange={(event) => {
-                  const next = [...rows] as [string, string][];
-                  next[index] = [key, event.target.value];
-                  emit(next);
-                }}
+                className="h-8 min-w-0 flex-1 font-mono text-xs"
+                onChange={(event) => updateRow(index, [key, event.target.value])}
               />
               <Button
                 variant="ghost"
                 size="icon"
                 aria-label={`Remove ${key || `${label} ${index + 1}`}`}
-                onClick={() => emit(rows.filter((_, position) => position !== index))}
+                onClick={() => apply(rows.filter((_, position) => position !== index))}
               >
                 <X aria-hidden className="h-3.5 w-3.5" />
               </Button>
@@ -73,7 +75,7 @@ export function KeyValueEditor({
         </ul>
       )}
 
-      <Button size="sm" onClick={() => emit([...rows, ["", ""]] as [string, string][])}>
+      <Button size="sm" onClick={() => apply([...rows, ["", ""]])}>
         <Plus aria-hidden className="h-3 w-3" />
         Add {label.toLowerCase()}
       </Button>

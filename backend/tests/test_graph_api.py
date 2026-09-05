@@ -33,9 +33,7 @@ def edge(source: dict, target: dict, source_handle: str = "out") -> dict[str, An
 
 
 def save(client: TestClient, workflow_id: str, nodes: list, edges: list) -> Any:
-    return client.put(
-        f"/api/workflows/{workflow_id}/graph", json={"nodes": nodes, "edges": edges}
-    )
+    return client.put(f"/api/workflows/{workflow_id}/graph", json={"nodes": nodes, "edges": edges})
 
 
 class TestReadGraph:

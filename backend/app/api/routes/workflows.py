@@ -6,9 +6,11 @@ from typing import Annotated
 from fastapi import APIRouter, Query, status
 
 from app.api.deps import CurrentUser, SessionDep
+from app.engine.validator import validate_workflow
 from app.models import Workflow, WorkflowStatus
 from app.schemas.common import Page
 from app.schemas.graph import GraphUpdate, WorkflowGraph
+from app.schemas.validation import ValidationResponse
 from app.schemas.workflow import (
     WorkflowCreate,
     WorkflowDetail,
@@ -142,3 +144,12 @@ def replace_graph(
     saved = graph_service.replace_graph(session, workflow, payload)
     service.touch(session, workflow)
     return saved
+
+
+@router.get("/{workflow_id}/validate", response_model=ValidationResponse)
+def validate(
+    workflow_id: uuid.UUID, session: SessionDep, current_user: CurrentUser
+) -> ValidationResponse:
+    """Report everything that would stop this workflow from running."""
+    workflow = service.get_workflow(session, current_user, workflow_id)
+    return ValidationResponse.from_report(validate_workflow(workflow))

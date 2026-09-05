@@ -37,6 +37,12 @@ class Settings(BaseSettings):
     cookie_secure: bool = False
     cookie_name: str = "flowforge_session"
 
+    # Outbound HTTP policy for the HTTP Request node. Private and reserved
+    # addresses are refused by default so a workflow cannot reach internal
+    # services or a cloud metadata endpoint.
+    http_allow_private_networks: bool = False
+    http_allowed_hosts: str = ""
+
     @field_validator("database_url")
     @classmethod
     def _require_psycopg_driver(cls, value: str) -> str:
@@ -48,6 +54,10 @@ class Settings(BaseSettings):
     @property
     def cors_origin_list(self) -> list[str]:
         return [origin.strip() for origin in self.cors_origins.split(",") if origin.strip()]
+
+    @property
+    def http_allowed_host_list(self) -> list[str]:
+        return [host.strip().lower() for host in self.http_allowed_hosts.split(",") if host.strip()]
 
     @property
     def is_production(self) -> bool:

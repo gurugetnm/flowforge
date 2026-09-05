@@ -280,6 +280,7 @@ class HttpRequestExecutor(NodeExecutor[HttpRequestConfig]):
         return raw.decode("utf-8", errors="replace"), truncated
 
 
+REDACTED = "***"
 SENSITIVE_QUERY_KEYS = frozenset({"token", "access_token", "api_key", "apikey", "key", "secret"})
 
 
@@ -290,12 +291,13 @@ def _redact(url: str) -> str:
     if parts.port:
         netloc = f"{netloc}:{parts.port}"
     if parts.username:
-        netloc = f"***@{netloc}"
+        netloc = f"{REDACTED}@{netloc}"
 
     query = urlencode(
         [
-            (key, "***" if key.lower() in SENSITIVE_QUERY_KEYS else value)
+            (key, REDACTED if key.lower() in SENSITIVE_QUERY_KEYS else value)
             for key, value in parse_qsl(parts.query, keep_blank_values=True)
-        ]
+        ],
+        safe="*",
     )
     return urlunsplit((parts.scheme, netloc, parts.path, query, ""))

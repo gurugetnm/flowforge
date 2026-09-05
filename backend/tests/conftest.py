@@ -7,6 +7,7 @@ Alembic migrations once per session.
 """
 
 import os
+import socket
 import uuid
 from collections.abc import Generator
 
@@ -27,7 +28,7 @@ TEST_DATABASE_URL = os.environ.get(
 # target the scratch database.
 os.environ["DATABASE_URL"] = TEST_DATABASE_URL
 os.environ["ENVIRONMENT"] = "test"
-os.environ.setdefault("SECRET_KEY", "test-secret-key-not-used-in-production")
+os.environ.setdefault("SECRET_KEY", "test-secret-key-not-used-in-production-0123456789")
 
 
 @pytest.fixture(scope="session")
@@ -106,3 +107,28 @@ def registered_user(client: TestClient) -> dict[str, str]:
     response = client.post("/api/auth/register", json=credentials)
     assert response.status_code == 201, response.text
     return {**credentials, "id": response.json()["id"]}
+
+
+@pytest.fixture
+def public_dns(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Resolve test hostnames to a public address without touching real DNS.
+
+    `respx` replaces the HTTP transport but not name resolution, and the
+    outbound URL policy resolves a host before connecting to it. Mapping the
+    documentation domains here keeps the tests deterministic and offline while
+    still running the real policy code.
+    """
+    public_addresses = {
+        "api.example.com": "93.184.216.34",
+        "example.com": "93.184.216.34",
+        "hooks.example.com": "93.184.216.34",
+    }
+    real_getaddrinfo = socket.getaddrinfo
+
+    def fake_getaddrinfo(host: str, *args: object, **kwargs: object) -> list[tuple]:
+        if host in public_addresses:
+            address = public_addresses[host]
+            return [(socket.AF_INET, socket.SOCK_STREAM, 6, "", (address, 0))]
+        return real_getaddrinfo(host, *args, **kwargs)  # type: ignore[arg-type]
+
+    monkeypatch.setattr(socket, "getaddrinfo", fake_getaddrinfo)

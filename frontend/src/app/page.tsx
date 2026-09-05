@@ -1,10 +1,24 @@
+"use client";
+
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+
+import { useSession } from "@/components/providers/session-provider";
+import { SkeletonRows } from "@/components/ui/skeleton";
+
+/** Entry point: send visitors to the dashboard or to sign in. */
 export default function HomePage() {
+  const { user, isLoading } = useSession();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (isLoading) return;
+    router.replace(user ? "/dashboard" : "/login");
+  }, [isLoading, user, router]);
+
   return (
-    <main className="mx-auto flex min-h-screen max-w-2xl flex-col justify-center px-6">
-      <h1 className="text-2xl font-semibold tracking-tight">FlowForge</h1>
-      <p className="text-text-muted mt-2">
-        Open-source visual workflow automation platform for developers.
-      </p>
-    </main>
+    <div className="mx-auto max-w-3xl p-8">
+      <SkeletonRows rows={2} />
+    </div>
   );
 }

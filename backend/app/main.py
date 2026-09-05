@@ -3,7 +3,15 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api.routes import auth, executions, health, nodes, webhooks, workflows
+from app.api.routes import (
+    auth,
+    executions,
+    health,
+    nodes,
+    templates,
+    webhooks,
+    workflows,
+)
 from app.config import get_settings
 from app.core.errors import register_exception_handlers
 
@@ -37,6 +45,7 @@ def create_app() -> FastAPI:
     app.include_router(workflows.router, prefix=API_PREFIX)
     app.include_router(executions.router, prefix=API_PREFIX)
     app.include_router(webhooks.router, prefix=API_PREFIX)
+    app.include_router(templates.router, prefix=API_PREFIX)
     return app
 
 

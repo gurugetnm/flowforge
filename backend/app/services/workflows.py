@@ -6,6 +6,7 @@ place rather than in each route.
 
 import uuid
 from dataclasses import dataclass
+from datetime import UTC, datetime
 
 from sqlalchemy import Select, func, or_, select
 from sqlalchemy.orm import Session
@@ -187,3 +188,9 @@ def _duplicate_name(name: str) -> str:
     if len(name) + len(DUPLICATE_SUFFIX) <= MAX_NAME_LENGTH:
         return name + DUPLICATE_SUFFIX
     return name[: MAX_NAME_LENGTH - len(DUPLICATE_SUFFIX)].rstrip() + DUPLICATE_SUFFIX
+
+
+def touch(session: Session, workflow: Workflow) -> None:
+    """Mark the workflow as changed so it sorts to the top of the list."""
+    workflow.updated_at = datetime.now(UTC)
+    session.flush()

@@ -49,3 +49,11 @@ class WorkflowSummary(ORMModel):
     node_count: int = 0
     created_at: datetime
     updated_at: datetime
+
+
+class WorkflowDetail(WorkflowSummary):
+    """Single workflow view, including the owner-only webhook details."""
+
+    webhook_path: str
+    #: Present only so the owner can copy the callable URL.
+    webhook_token: str
